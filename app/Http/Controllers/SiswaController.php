@@ -22,9 +22,7 @@ class SiswaController extends Controller
      */
     public function index(Request $request)
     {
-        $data = Siswa::where('user_id', Auth::id())
-            ->with('user')
-            ->get();
+        $data = Siswa::all();
 
         if ($request->expectsJson()) {
             return response()->json($data);

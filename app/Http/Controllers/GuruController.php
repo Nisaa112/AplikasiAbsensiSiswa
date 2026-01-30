@@ -23,9 +23,7 @@ class GuruController extends Controller
      */
     public function index(Request $request)
     {
-        $data = Guru::where('user_id', Auth::id())
-            ->with('user')
-            ->get();
+        $data = Guru::all();
 
         if ($request->expectsJson()) {
             return response()->json($data);
