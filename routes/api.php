@@ -1,9 +1,14 @@
 <?php
 
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\AcademicController;
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelasController;
@@ -17,11 +22,8 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
 
-    Route::get('/profile', function (Request $request) {
-        return response()->json($request->user());
-    });
-
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/profile', [ProfileController::class, 'show']);
 
     Route::apiResource('user', UserController::class);
     Route::apiResource('guru', GuruController::class);
@@ -30,4 +32,14 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('kelas', KelasController::class);
     Route::apiResource('mapel', MapelController::class);
     Route::apiResource('absensi', AbsensiController::class);
+
+    Route::get('/academic/master', [AcademicController::class, 'getMasterData']);
+
+    Route::get('/schedule/mine', [ScheduleController::class, 'mySchedule']);
+
+    Route::post('/attendance/session', [AttendanceController::class, 'createSesi']); 
+    Route::post('/attendance/scan', [AttendanceController::class, 'scanQR']);
+
+    Route::post('/permission/apply', [PermissionController::class, 'store']);
+    Route::put('/permission/validate/{id}', [PermissionController::class, 'validateIzin']); 
 });
