@@ -13,6 +13,7 @@ use App\Http\Controllers\GuruController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\MapelController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\UserController;
 
@@ -40,6 +41,13 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/attendance/session', [AttendanceController::class, 'createSesi']); 
     Route::post('/attendance/scan', [AttendanceController::class, 'scanQR']);
 
+    Route::get('/absensi/riwayat', [AttendanceController::class, 'historySiswa']);
+
+    Route::get('/report/chart', [ReportController::class, 'chartData']);
+    Route::get('/report-guru/export', [ReportController::class, 'exportExcel']);
+    Route::get('/report-guru/pdf', [ReportController::class, 'exportPdf']);
+
     Route::post('/permission/apply', [PermissionController::class, 'store']);
     Route::put('/permission/validate/{id}', [PermissionController::class, 'validateIzin']); 
+    Route::get('/permission', [PermissionController::class, 'index']); 
 });

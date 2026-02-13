@@ -11,10 +11,10 @@ class ScheduleController extends Controller {
         /** @var \App\Models\User $user */
         $user = Auth::user();
         \Carbon\Carbon::setLocale('id');
-        $hari = now()->translatedFormat('l'); // Hasilnya: "Senin"
+        $hari = now()->translatedFormat('l'); 
 
         $query = Jadwal::with([
-            'kelas:id,nama_kelas', 
+            'kelas:id,tingkat,jurusan,nomor_kelas', 
             'mapel:id,nama_mapel', 
             'lokasi:id,nama_lokasi,radius'
         ])->where('hari', $hari);
