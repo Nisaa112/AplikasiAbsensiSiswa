@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('nip')->unique();
             $table->string('nama_guru');
+            $table->enum('senioritas', ['Senior', 'Junior'])->default('Junior');
+            $table->enum('gender', ['L', 'P'])->default('L');
             $table->timestamps();
         });
     }

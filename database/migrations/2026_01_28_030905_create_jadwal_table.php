@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('mapel_id')->constrained('mapel');
             $table->foreignId('guru_id')->constrained('guru');
             $table->foreignId('lokasi_id')->constrained('lokasi');
+            $table->tinyInteger('minggu')->default(1); 
             $table->enum('hari', ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']);
             $table->time('jam_mulai');
             $table->time('jam_selesai');

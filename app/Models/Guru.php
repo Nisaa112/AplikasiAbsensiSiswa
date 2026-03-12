@@ -17,6 +17,8 @@ class Guru extends Model
         'user_id',
         'nip',
         'nama_guru',
+        'senioritas',
+        'gender',
     ];
 
     public function user()
@@ -32,5 +34,13 @@ class Guru extends Model
     public function jadwal()
     {
         return $this->hasMany(Jadwal::class, 'guru_id');
+    }
+
+    public function piketHarian() {
+        return $this->hasMany(JadwalPiket::class, 'guru_id');
+    }
+
+    public function perizinan() {
+        return $this->hasMany(PerizinanGuru::class, 'guru_id');
     }
 }

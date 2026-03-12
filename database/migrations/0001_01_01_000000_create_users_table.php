@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->nullable();
             $table->string('serial_number')->unique();
-            $table->enum('role', ['admin', 'guru', 'siswa'])->default('siswa');
+            $table->enum('role', ['admin', 'guru', 'siswa', 'kepsek'])->default('siswa');
             $table->string('device_id')->nullable();
             $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();

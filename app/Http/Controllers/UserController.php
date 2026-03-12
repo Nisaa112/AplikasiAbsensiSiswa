@@ -4,80 +4,66 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    // Admin harus bisa mencari user mana saja berdasarkan ID
     private function findUserById($id)
     {
-        return User::where('id', Auth::id())->findOrFail($id);
+        return User::findOrFail($id);
     }
 
     /**
-     * Get user login (profile)
+     * List Semua User (Untuk Admin)
      */
     public function index(Request $request)
     {
-        $data = User::where('id', Auth::id())->first();
+        $data = User::orderBy('id', 'desc')->get();
 
-        return response()->json([
-            'status' => true,
-            'data' => $data,
-        ]);
+        // pengecekan ini agar bisa melayani API dan Web sekaligus
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'data'   => $data,
+            ]);
+        }
+
+        return view('user/index', ['data' => $data]);
     }
 
-    /**
-     * Create user (biasanya admin / registrasi)
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'name'          => 'required|string|max:255',
             'serial_number' => 'required|string|unique:users,serial_number',
-            'password' => 'required|min:6',
-            'role' => ['required', Rule::in(['admin', 'guru', 'siswa'])],
-            'device_id' => 'nullable|string',
+            'password'      => 'required|min:6',
+            'role'          => ['required', Rule::in(['admin', 'guru', 'siswa', 'kepsek'])],
         ]);
 
         $validated['password'] = bcrypt($validated['password']);
-
         $user = User::create($validated);
 
-        return response()->json([
-            'status' => (bool) $user,
-            'message' => $user ? 'User berhasil dibuat' : 'User gagal dibuat',
-            'data' => $user,
-        ], $user ? 201 : 500);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'User berhasil dibuat',
+                'data' => $user,
+            ], 201);
+        }
+
+        return redirect()->route('pengguna.index')->with('success', 'User berhasil ditambahkan');
     }
 
-    /**
-     * Show user detail
-     */
-    public function show($id)
-    {
-        $user = $this->findUserById($id);
-
-        return response()->json([
-            'status' => true,
-            'data' => $user,
-        ]);
-    }
-
-    /**
-     * Update user login
-     */
     public function update(Request $request, $id)
     {
         $user = $this->findUserById($id);
 
         $validated = $request->validate([
-            'serial_number' => [
-                'required',
-                Rule::unique('users')->ignore($user->id),
-            ],
-            'password' => 'nullable|min:6',
-            'role' => ['required', Rule::in(['admin', 'guru', 'siswa'])],
-            'device_id' => 'nullable|string',
+            'name'          => 'required|string|max:255',
+            'serial_number' => ['required', Rule::unique('users')->ignore($user->id)],
+            'password'      => 'nullable|min:6',
+            'role'          => ['required', Rule::in(['admin', 'guru', 'siswa', 'kepsek'])],
         ]);
 
         if (!empty($validated['password'])) {
@@ -86,27 +72,31 @@ class UserController extends Controller
             unset($validated['password']);
         }
 
-        $status = $user->update($validated);
+        $user->update($validated);
+        
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'User berhasil diupdate',
+                'data' => $user
+            ]);
+        }
 
-        return response()->json([
-            'status' => (bool) $status,
-            'message' => $status ? 'User berhasil diupdate' : 'User gagal diupdate',
-            'data' => $user,
-        ], $status ? 200 : 500);
+        return redirect('/user')->with('success', 'Data user berhasil diupdate');
     }
 
-    /**
-     * Delete user
-     */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $user = $this->findUserById($id);
+        $user->delete();
 
-        $status = $user->delete();
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'User berhasil dihapus',
+            ]);
+        }
 
-        return response()->json([
-            'status' => (bool) $status,
-            'message' => $status ? 'User berhasil dihapus' : 'User gagal dihapus',
-        ], $status ? 200 : 500);
+        return redirect('/user')->with('success', 'Data user berhasil dihapus');
     }
 }

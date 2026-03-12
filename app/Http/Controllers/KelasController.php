@@ -9,24 +9,19 @@ use Illuminate\Http\Request;
 
 class KelasController extends Controller
 {
-    private function findKelasById($id)
-    {
-        return Kelas::findOrFail($id);
-    }
-
     public function index(Request $request)
     {
-        // Tetap gunakan waliKelas agar tidak error
         $data = Kelas::with(['tahunAjaran', 'waliKelas'])->get();
+        
+        // Data pendukung untuk Dropdown di Modal
+        $teachers = Guru::orderBy('nama_guru', 'asc')->get();
+        $years = TahunAjaran::orderBy('tahun', 'desc')->get();
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => 'success',
-                'data'   => $data
-            ]);
+            return response()->json(['status' => 'success', 'data' => $data]);
         }
 
-        return view('kelas/index', ['data' => $data]);
+        return view('kelas.index', compact('data', 'teachers', 'years'));
     }
 
     public function store(Request $request)
@@ -42,20 +37,15 @@ class KelasController extends Controller
         $status = Kelas::create($validated);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Data kelas berhasil ditambahkan',
-                'data' => $status
-            ], 201);
+            return response()->json(['status' => true, 'data' => $status], 201);
         }
 
-        return redirect('/kelas')->with('success', 'Data kelas berhasil ditambahkan');
+        return redirect()->route('classes.index')->with('success', 'Data kelas berhasil ditambahkan');
     }
 
     public function update(Request $request, $id)
     {
-        $kelas = $this->findKelasById($id);
-        
+        $kelas = Kelas::findOrFail($id);
         $validated = $request->validate([
             'tingkat'         => 'required|integer',
             'jurusan'         => 'required|string|max:20',
@@ -67,28 +57,21 @@ class KelasController extends Controller
         $kelas->update($validated);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Data kelas berhasil diupdate',
-            ]);
+            return response()->json(['status' => true, 'message' => 'Berhasil diupdate']);
         }
 
-        return redirect('/kelas')->with('success', 'Data kelas berhasil diupdate');
+        return redirect()->route('classes.index')->with('success', 'Data kelas berhasil diperbarui');
     }
 
     public function destroy(Request $request, $id)
     {
-        $kelas = $this->findKelasById($id);
+        $kelas = Kelas::findOrFail($id);
         $kelas->delete();
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Data kelas berhasil dihapus',
-            ]);
+            return response()->json(['status' => true, 'message' => 'Berhasil dihapus']);
         }
 
-        return redirect('/kelas')->with('success', 'Data kelas berhasil dihapus');
+        return redirect()->route('classes.index')->with('success', 'Data kelas berhasil dihapus');
     }
-
 }

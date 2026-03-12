@@ -15,15 +15,16 @@ class MapelController extends Controller
 
     public function index(Request $request)
     {
-        $data = Mapel::all();
+        $data = Mapel::orderBy('nama_mapel', 'asc')->get();
 
         if ($request->expectsJson()) {
-            return response()->json($data);
+            return response()->json([
+                'status' => 'success',
+                'data' => $data // Dibungkus key data agar sinkron dengan Flutter
+            ]);
         }
 
-        return view('mapel/index', [
-            'data' => $data
-        ]);
+        return view('mapel/index', ['data' => $data]);
     }
 
     public function create()
@@ -51,10 +52,10 @@ class MapelController extends Controller
         }
 
         if ($status) {
-            return redirect('/mapel')->with('success', 'Mapel berhasil ditambahkan');
+            return redirect('subjects.index')->with('success', 'Mapel berhasil ditambahkan');
         }
 
-        return redirect('/mapel')->with('error', 'Mapel gagal ditambahkan');
+        return redirect('subjects.index')->with('error', 'Mapel gagal ditambahkan');
     }
 
     public function edit($id)
@@ -88,10 +89,10 @@ class MapelController extends Controller
         }
 
         if ($status) {
-            return redirect('/mapel')->with('success', 'Mapel berhasil diupdate');
+            return redirect('subjects.index')->with('success', 'Mapel berhasil diupdate');
         }
 
-        return redirect('/mapel')->with('error', 'Mapel gagal diupdate');
+        return redirect('subjects.index')->with('error', 'Mapel gagal diupdate');
     }
 
     public function destroy(Request $request, $id)
@@ -107,9 +108,9 @@ class MapelController extends Controller
         }
 
         if ($status) {
-            return redirect('/mapel')->with('success', 'Mapel berhasil dihapus');
+            return redirect('subjects.index')->with('success', 'Mapel berhasil dihapus');
         }
 
-        return redirect('/mapel')->with('error', 'Mapel gagal dihapus');
+        return redirect('subjects.index')->with('error', 'Mapel gagal dihapus');
     }
 }

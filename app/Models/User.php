@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use App\Models\Assessments;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -19,10 +20,12 @@ class User extends Authenticatable implements JWTSubject
      * @var list<string>
      */
     protected $fillable = [
+        'name',
         'serial_number',
         'password',
         'role',
         'device_id',
+        'email'
     ];
 
     /**
@@ -66,5 +69,38 @@ class User extends Authenticatable implements JWTSubject
     public function siswa()
     {
         return $this->hasOne(Siswa::class, 'user_id');
+    }
+
+    // public function getAuthIdentifierName()
+    // {
+    //     return 'serial_number';
+    // }
+
+    /**
+     * Relasi untuk mendapatkan semua penilaian yang diterima oleh user (sebagai siswa)
+     */
+    public function assessmentsReceived()
+    {
+        return $this->hasMany(Assessment::class, 'evaluatee_id');
+    }
+
+    /**
+     * Relasi untuk mendapatkan semua penilaian yang diberikan oleh user (sebagai guru/penilai)
+     */
+    public function assessmentsGiven()
+    {
+        return $this->hasMany(Assessment::class, 'evaluator_id');
+    }
+
+    public function anggotaKelas()
+    {
+        return $this->hasManyThrough(
+            \App\Models\AnggotaKelas::class, // Target akhir
+            \App\Models\Siswa::class,        // Lewat model ini
+            'user_id',                       // Foreign key di tabel siswa
+            'siswa_id',                      // Foreign key di tabel anggota_kelas
+            'id',                            // Local key di tabel users
+            'id'                             // Local key di tabel siswa
+        );
     }
 }

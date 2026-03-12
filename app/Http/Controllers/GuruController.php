@@ -5,136 +5,80 @@ namespace App\Http\Controllers;
 use App\Models\Guru;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class GuruController extends Controller
 {
-    /**
-     * Ambil data guru berdasarkan ID & user login
-     */
-    private function findGuruByIdAndUser($id)
-    {
-        return Guru::where('user_id', Auth::id())->findOrFail($id);
-    }
-
-    /**
-     * List data guru
-     */
     public function index(Request $request)
     {
-        $data = Guru::all();
+        $data = Guru::with('user')->get();
+
+        // Ambil user role guru yang BELUM terdaftar di tabel guru
+        $usersAvailable = User::where('role', 'guru')
+            ->whereDoesntHave('guru')
+            ->get();
 
         if ($request->expectsJson()) {
-            return response()->json($data);
+            return response()->json(['status' => 'success', 'data' => $data]);
         }
 
-        return view('guru/index', ['data' => $data]);
+        return view('guru.index', compact('data', 'usersAvailable'));
     }
 
-    /**
-     * Form tambah guru
-     */
-    public function create()
-    {
-        return view('guru/form');
-    }
-
-    /**
-     * Simpan data guru
-     */
     public function store(Request $request)
     {
+        // Validasi input
         $validated = $request->validate([
-            'nip' => [
-                'required',
-                'max:30',
-                'unique:guru,nip',
-            ],
-            'nama_guru' => [
-                'required',
-                'max:100',
-                'regex:/^[a-zA-Z\s\-]+$/'
-            ],
+            'user_id'    => 'required|exists:users,id|unique:guru,user_id',
+            'nip'        => 'required|max:30|unique:guru,nip',
+            'nama_guru'  => 'required|max:100',
+            'senioritas' => 'required|in:Senior,Junior',
+            'gender'     => 'required|in:L,P',
         ]);
-
-        $validated['user_id'] = Auth::id();
 
         $status = Guru::create($validated);
 
         if ($request->expectsJson()) {
             return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Guru berhasil ditambahkan' : 'Guru gagal ditambahkan',
-            ], $status ? 200 : 500);
+                'status' => true,
+                'message' => 'Guru berhasil dibuat',
+                'data' => $status,
+            ], 201);
         }
 
-        return $status
-            ? redirect('/guru')->with('success', 'Data guru berhasil ditambahkan')
-            : redirect('/guru')->with('error', 'Data guru gagal ditambahkan');
+        // REDIRECT MENGGUNAKAN NAMA ROUTE
+        return redirect()->route('teacher.index')->with('success', 'Data guru berhasil ditambahkan');
     }
 
-    /**
-     * Form edit guru
-     */
-    public function edit($id)
-    {
-        $data = $this->findGuruByIdAndUser($id);
-        return view('guru/form', ['data' => $data]);
-    }
-
-    /**
-     * Update data guru
-     */
     public function update(Request $request, $id)
     {
-        $guru = $this->findGuruByIdAndUser($id);
+        $guru = Guru::findOrFail($id);
 
         $validated = $request->validate([
-            'nip' => [
-                'required',
-                'max:30',
-                Rule::unique('guru')->ignore($guru->id),
-            ],
-            'nama_guru' => [
-                'required',
-                'max:100',
-                'regex:/^[a-zA-Z\s\-]+$/'
-            ],
+            'nip'        => ['required', 'max:30', Rule::unique('guru')->ignore($guru->id)],
+            'nama_guru'  => 'required|max:100',
+            'senioritas' => 'required|in:Senior,Junior',
+            'gender'     => 'required|in:L,P',
         ]);
 
-        $status = $guru->update($validated);
+        $guru->update($validated);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Guru berhasil diupdate' : 'Guru gagal diupdate',
-            ], $status ? 200 : 500);
+            return response()->json(['status' => true, 'message' => 'Guru diupdate']);
         }
 
-        return $status
-            ? redirect('/guru')->with('success', 'Data guru berhasil diupdate')
-            : redirect('/guru')->with('error', 'Data guru gagal diupdate');
+        return redirect()->route('teacher.index')->with('success', 'Data guru berhasil diupdate');
     }
 
-    /**
-     * Hapus data guru
-     */
     public function destroy(Request $request, $id)
     {
-        $guru = $this->findGuruByIdAndUser($id);
-
-        $status = $guru->delete();
+        $guru = Guru::findOrFail($id);
+        $guru->delete();
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Guru berhasil dihapus' : 'Guru gagal dihapus',
-            ], $status ? 200 : 500);
+            return response()->json(['status' => true, 'message' => 'Guru dihapus']);
         }
 
-        return $status
-            ? redirect('/guru')->with('success', 'Data guru berhasil dihapus')
-            : redirect('/guru')->with('error', 'Data guru gagal dihapus');
+        return redirect()->route('teacher.index')->with('success', 'Data guru berhasil dihapus');
     }
 }

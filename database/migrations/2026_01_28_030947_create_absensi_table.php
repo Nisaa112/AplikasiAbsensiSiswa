@@ -21,6 +21,8 @@ return new class extends Migration
             $table->double('long_siswa')->nullable();
             $table->boolean('is_valid')->default(false);
             $table->timestamps();
+
+            $table->unique(['siswa_id', 'sesi_id']);
         });
     }
 

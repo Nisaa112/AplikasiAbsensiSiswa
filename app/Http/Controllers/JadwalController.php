@@ -11,32 +11,21 @@ use Illuminate\Http\Request;
 
 class JadwalController extends Controller
 {
-    private function findJadwalById($id)
-    {
-        return Jadwal::findOrFail($id);
-    }
-
     public function index(Request $request)
     {
-        $data = Jadwal::with(['kelas', 'mapel', 'guru', 'lokasi'])->get();
+        $data = Jadwal::with(['kelas', 'mapel', 'guru', 'lokasi'])->latest()->get();
+
+        // Data pendukung untuk Dropdown di Modal
+        $classes = Kelas::all();
+        $subjects = Mapel::orderBy('nama_mapel', 'asc')->get();
+        $teachers = Guru::orderBy('nama_guru', 'asc')->get();
+        $locations = Lokasi::all();
 
         if ($request->expectsJson()) {
-            return response()->json($data);
+            return response()->json(['status' => 'success', 'data' => $data]);
         }
 
-        return view('jadwal/index', [
-            'data' => $data
-        ]);
-    }
-
-    public function create()
-    {
-        return view('jadwal/form', [
-            'kelas' => Kelas::all(),
-            'mapel' => Mapel::all(),
-            'guru' => Guru::all(),
-            'lokasi' => Lokasi::all(),
-        ]);
+        return view('jadwal.index', compact('data', 'classes', 'subjects', 'teachers', 'locations'));
     }
 
     public function store(Request $request)
@@ -46,86 +35,53 @@ class JadwalController extends Controller
             'mapel_id' => 'required|exists:mapel,id',
             'guru_id' => 'required|exists:guru,id',
             'lokasi_id' => 'required|exists:lokasi,id',
-            'hari' => 'required|string|max:20',
-            'jam_mulai' => 'required|date_format:H:i',
-            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
+            'minggu' => 'required|in:1,2',
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required',
         ]);
 
-        $status = Jadwal::create($validated);
+        $item = Jadwal::create($validated);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Berhasil ditambahkan' : 'Gagal ditambahkan',
-            ], $status ? 200 : 500);
+            return response()->json(['status' => true, 'data' => $item], 201);
         }
 
-        if ($status) {
-            return redirect('/jadwal')->with('success', 'Jadwal berhasil ditambahkan');
-        }
-
-        return redirect('/jadwal')->with('error', 'Jadwal gagal ditambahkan');
-    }
-
-    public function edit($id)
-    {
-        $data = $this->findJadwalById($id);
-
-        return view('jadwal/form', [
-            'data' => $data,
-            'kelas' => Kelas::all(),
-            'mapel' => Mapel::all(),
-            'guru' => Guru::all(),
-            'lokasi' => Lokasi::all(),
-        ]);
+        return redirect()->route('schedules.index')->with('success', 'Jadwal berhasil ditambahkan');
     }
 
     public function update(Request $request, $id)
     {
-        $jadwal = $this->findJadwalById($id);
-
+        $jadwal = Jadwal::findOrFail($id);
         $validated = $request->validate([
             'kelas_id' => 'required|exists:kelas,id',
             'mapel_id' => 'required|exists:mapel,id',
             'guru_id' => 'required|exists:guru,id',
             'lokasi_id' => 'required|exists:lokasi,id',
-            'hari' => 'required|string|max:20',
-            'jam_mulai' => 'required|date_format:H:i',
-            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
+            'minggu' => 'required|in:1,2',
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required',
         ]);
 
-        $status = $jadwal->update($validated);
+        $jadwal->update($validated);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Berhasil diupdate' : 'Gagal diupdate',
-            ], $status ? 200 : 500);
+            return response()->json(['status' => true, 'message' => 'Jadwal diperbarui']);
         }
 
-        if ($status) {
-            return redirect('/jadwal')->with('success', 'Jadwal berhasil diupdate');
-        }
-
-        return redirect('/jadwal')->with('error', 'Jadwal gagal diupdate');
+        return redirect()->route('schedules.index')->with('success', 'Jadwal berhasil diperbarui');
     }
 
     public function destroy(Request $request, $id)
     {
-        $jadwal = $this->findJadwalById($id);
-        $status = $jadwal->delete();
+        $jadwal = Jadwal::findOrFail($id);
+        $jadwal->delete();
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Berhasil dihapus' : 'Gagal dihapus',
-            ], $status ? 200 : 500);
+            return response()->json(['status' => true, 'message' => 'Jadwal dihapus']);
         }
 
-        if ($status) {
-            return redirect('/jadwal')->with('success', 'Jadwal berhasil dihapus');
-        }
-
-        return redirect('/jadwal')->with('error', 'Jadwal gagal dihapus');
+        return redirect()->route('schedules.index')->with('success', 'Jadwal berhasil dihapus');
     }
 }

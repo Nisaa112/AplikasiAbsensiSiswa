@@ -3,137 +3,91 @@
 namespace App\Http\Controllers;
 
 use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class SiswaController extends Controller
 {
-    /**
-     * Ambil data siswa berdasarkan ID & user login
-     */
-    private function findSiswaByIdAndUser($id)
+    private function findSiswaById($id)
     {
-        return Siswa::where('user_id', Auth::id())->findOrFail($id);
+        return Siswa::findOrFail($id);
     }
 
-    /**
-     * List data siswa
-     */
     public function index(Request $request)
     {
-        $data = Siswa::all();
+        $data = Siswa::with('user')->get();
+
+        // Ambil user role siswa yang belum punya profil siswa
+        $usersAvailable = User::where('role', 'siswa')
+            ->whereDoesntHave('siswa')
+            ->select('id', 'name', 'serial_number')
+            ->get();
 
         if ($request->expectsJson()) {
-            return response()->json($data);
+            return response()->json(['status' => 'success', 'data' => $data]);
         }
 
-        return view('siswa/index', ['data' => $data]);
+        return view('siswa.index', compact('data', 'usersAvailable'));
     }
 
-    /**
-     * Form tambah siswa
-     */
-    public function create()
-    {
-        return view('siswa/form');
-    }
-
-    /**
-     * Simpan data siswa
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nisn' => [
-                'required',
-                'max:30',
-                'unique:siswa,nisn',
-            ],
-            'nama_siswa' => [
-                'required',
-                'max:100',
-                'regex:/^[a-zA-Z\s\-]+$/'
-            ],
+            'user_id'    => 'required|exists:users,id|unique:siswa,user_id',
+            'nisn'       => 'required|max:30|unique:siswa,nisn',
+            'nama_siswa' => 'required|max:100',
         ]);
-
-        $validated['user_id'] = Auth::id();
 
         $status = Siswa::create($validated);
 
+        // CEK APAKAH REQUEST DARI APLIKASI (API)
         if ($request->expectsJson()) {
             return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Siswa berhasil ditambahkan' : 'Siswa gagal ditambahkan',
-            ], $status ? 200 : 500);
+                'status' => true,
+                'message' => 'Siswa berhasil ditambahkan',
+                'data' => $status
+            ], 201);
         }
 
-        return $status
-            ? redirect('/siswa')->with('success', 'Data siswa berhasil ditambahkan')
-            : redirect('/siswa')->with('error', 'Data siswa gagal ditambahkan');
+        // JIKA DARI WEB (BROWSER), REDIRECT KE ROUTE NAME 'murid.index'
+        return redirect()->route('murid.index')->with('success', 'Data siswa berhasil ditambahkan');
     }
 
-    /**
-     * Form edit siswa
-     */
-    public function edit($id)
-    {
-        $data = $this->findSiswaByIdAndUser($id);
-        return view('siswa/form', ['data' => $data]);
-    }
-
-    /**
-     * Update data siswa
-     */
     public function update(Request $request, $id)
     {
-        $siswa = $this->findSiswaByIdAndUser($id);
+        $siswa = $this->findSiswaById($id);
 
         $validated = $request->validate([
-            'nisn' => [
-                'required',
-                'max:30',
-                Rule::unique('siswa')->ignore($siswa->id),
-            ],
-            'nama_siswa' => [
-                'required',
-                'max:100',
-                'regex:/^[a-zA-Z\s\-]+$/'
-            ],
+            'nisn'       => ['required', 'max:30', Rule::unique('siswa')->ignore($siswa->id)],
+            'nama_siswa' => 'required|max:100',
+            // User ID dikunci agar tidak berubah saat update untuk keamanan data
         ]);
 
-        $status = $siswa->update($validated);
+        $siswa->update($validated);
 
         if ($request->expectsJson()) {
             return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Siswa berhasil diupdate' : 'Siswa gagal diupdate',
-            ], $status ? 200 : 500);
+                'status' => true,
+                'message' => 'Siswa berhasil diupdate',
+            ]);
         }
 
-        return $status
-            ? redirect('/siswa')->with('success', 'Data siswa berhasil diupdate')
-            : redirect('/siswa')->with('error', 'Data siswa gagal diupdate');
+        return redirect()->route('murid.index')->with('success', 'Data siswa berhasil diupdate');
     }
 
-    /**
-     * Hapus data siswa
-     */
     public function destroy(Request $request, $id)
     {
-        $siswa = $this->findSiswaByIdAndUser($id);
-
-        $status = $siswa->delete();
+        $siswa = $this->findSiswaById($id);
+        $siswa->delete();
 
         if ($request->expectsJson()) {
             return response()->json([
-                'status' => (bool) $status,
-                'message' => $status ? 'Siswa berhasil dihapus' : 'Siswa gagal dihapus',
-            ], $status ? 200 : 500);
+                'status' => true,
+                'message' => 'Siswa berhasil dihapus',
+            ]);
         }
 
-        return $status
-            ? redirect('/siswa')->with('success', 'Data siswa berhasil dihapus')
-            : redirect('/siswa')->with('error', 'Data siswa gagal dihapus');
+        return redirect()->route('murid.index')->with('success', 'Data siswa berhasil dihapus');
     }
 }

@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('tahun_ajaran', function (Blueprint $table) {
             $table->id();
-            $table->string('tahun'); // Contoh: 2025/2026
+            $table->string('tahun');
             $table->enum('semester', ['Ganjil', 'Genap']);
+            $table->date('tgl_mulai');
             $table->boolean('status')->default(false);
             $table->timestamps();
         });
